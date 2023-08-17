@@ -27,6 +27,10 @@ function App() {
     });
   }, [socket, userId]);
   useEffect(() => {
+    socket?.on("connect_error", (err) => {
+      console.log(err.message); // prints the message associated with the error
+    });
+
     socket?.on("disconnect", () => {
       setConnected(false);
     });
@@ -51,6 +55,10 @@ function App() {
     setUserId(inputUserId);
   };
 
+  const handleSignOut = () => {
+    setUserId("");
+  };
+
   const getRooms = () => {
     socket?.emit("get-rooms", (rms: string[]) => {
       setRooms(rms);
@@ -68,6 +76,12 @@ function App() {
 
   return (
     <div>
+      <button
+        onClick={handleSignOut}
+        style={{ position: "absolute", top: "20px", right: "20px" }}
+      >
+        Sign out
+      </button>
       {userId === "" && (
         <Fragment>
           <input
