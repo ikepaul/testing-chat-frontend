@@ -11,15 +11,38 @@ interface Props {
 export default function ChatRoom({ socket, roomid, userid }: Props) {
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [text, setText] = useState<string>("");
+  const [optimisticMessages, setOptimisticMessages] = useState<IMessage[]>([]);
   const updateMessages = (roomid: string) => {
     socket.emit("get-messages", roomid, (msgs: IMessage[]) => {
       setMessages(msgs);
     });
   };
   useEffect(() => {
-    socket.on("update", () => {
+    const msgUpdate = () => {
       updateMessages(roomid);
-    });
+    };
+    socket.on("update", msgUpdate);
+    const handleNewMessage = (message: IMessage) => {
+      console.log(message);
+      setMessages((prev) => [...prev, message]);
+      setOptimisticMessages((prev) => {
+        const newMsgs = [...prev];
+        newMsgs.splice(
+          newMsgs.findIndex(
+            (msg) => !(msg.sender == message.sender && msg.text == message.text)
+          ),
+          1
+        );
+        return [...newMsgs];
+      });
+    };
+    socket.on("new-message", handleNewMessage);
+    console.log("socket changed");
+
+    return () => {
+      socket.removeListener("new-message", handleNewMessage);
+      socket.removeListener("update", msgUpdate);
+    };
   }, [socket, roomid]);
 
   useEffect(() => {
@@ -28,16 +51,21 @@ export default function ChatRoom({ socket, roomid, userid }: Props) {
   }, [roomid, userid]);
 
   const handleSend = () => {
+    setOptimisticMessages((prev) => [...prev, { text, sender: userid }]);
     socket.emit("post-message", roomid, userid, text);
-    socket.emit("update-all", roomid); //Säger åt alla att ladda om chatten.
   };
 
   return (
     <div>
       <h1>{roomid}</h1>
-      <ul>
+      <ul style={{ fontSize: 40 }}>
         {messages.map(({ text, sender }) => (
           <li>
+            <b>{sender}</b>:{text}
+          </li>
+        ))}
+        {optimisticMessages.map(({ text, sender }) => (
+          <li style={{ color: "gray" }}>
             <b>{sender}</b>:{text}
           </li>
         ))}
@@ -53,6 +81,7 @@ export default function ChatRoom({ socket, roomid, userid }: Props) {
             width: "70%",
           }}
           id=""
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
         <button style={{ width: "25%" }} onClick={handleSend}>
           send
