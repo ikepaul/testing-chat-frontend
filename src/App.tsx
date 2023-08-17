@@ -12,14 +12,21 @@ function App() {
   const [rooms, setRooms] = useState<string[]>([]);
 
   useEffect(() => {
-    const s = io("http://localhost:3000");
+    const s = io("http://localhost:3000", {
+      auth: {
+        token: userId,
+      },
+    });
     setSocket(s);
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
-    const token = "valid";
-    socket?.emit("authenticate", token);
-
+    socket?.emit("get-rooms", (rms: string[]) => {
+      setRooms(rms);
+      console.log(rms);
+    });
+  }, [socket, userId]);
+  useEffect(() => {
     socket?.on("disconnect", () => {
       setConnected(false);
     });
@@ -36,28 +43,27 @@ function App() {
   }, [socket]);
 
   const handleJoin = () => {
-    socket?.emit("join-room", inputRoomId, userId);
+    socket?.emit("join-room", inputRoomId);
     getRooms();
   };
 
   const handleSignIn = () => {
     setUserId(inputUserId);
-
-    socket?.emit("get-rooms", inputUserId, (rms: string[]) => {
-      setRooms(rms);
-      console.log(rms);
-    });
   };
 
   const getRooms = () => {
-    socket?.emit("get-rooms", userId, (rms: string[]) => {
+    socket?.emit("get-rooms", (rms: string[]) => {
       setRooms(rms);
       console.log(rms);
     });
   };
 
   const handleRoomClick = (roomId: string) => {
-    setRoomId(roomId);
+    socket?.emit("connect-to-room", roomId, (success: boolean) => {
+      if (success) {
+        setRoomId(roomId);
+      }
+    });
   };
 
   return (
@@ -98,7 +104,7 @@ function App() {
         </div>
       )}
       {userId && socket && connected && roomId && inputUserId ? (
-        <ChatRoom roomid={roomId} userid={inputUserId} socket={socket} />
+        <ChatRoom roomId={roomId} userId={userId} socket={socket} />
       ) : (
         <div>No room selected</div>
       )}

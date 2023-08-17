@@ -4,16 +4,16 @@ import { Socket } from "socket.io-client";
 
 interface Props {
   socket: Socket;
-  roomid: string;
-  userid: string;
+  roomId: string;
+  userId: string;
 }
 
-export default function ChatRoom({ socket, roomid, userid }: Props) {
+export default function ChatRoom({ socket, roomId, userId }: Props) {
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [text, setText] = useState<string>("");
   const [optimisticMessages, setOptimisticMessages] = useState<IMessage[]>([]);
-  const updateMessages = (roomid: string) => {
-    socket.emit("get-messages", roomid, (msgs: IMessage[]) => {
+  const updateMessages = () => {
+    socket.emit("get-messages", (msgs: IMessage[]) => {
       setMessages(msgs);
     });
   };
@@ -34,26 +34,24 @@ export default function ChatRoom({ socket, roomid, userid }: Props) {
       });
     };
     socket.on("new-message", handleNewMessage);
-    console.log("socket changed");
 
     return () => {
       socket.removeListener("new-message", handleNewMessage);
     };
-  }, [socket, roomid]);
+  }, [socket, roomId]);
 
   useEffect(() => {
-    updateMessages(roomid);
-    socket.emit("connect-to-room", roomid, userid);
-  }, [roomid, userid]);
+    updateMessages();
+  }, [roomId]);
 
   const handleSend = () => {
-    setOptimisticMessages((prev) => [...prev, { text, sender: userid }]);
-    socket.emit("post-message", roomid, userid, text);
+    setOptimisticMessages((prev) => [...prev, { text, sender: userId }]);
+    socket.emit("post-message", text);
   };
 
   return (
     <div>
-      <h1>{roomid}</h1>
+      <h1>{roomId}</h1>
       <ul style={{ fontSize: 40 }}>
         {messages.map(({ text, sender }) => (
           <li>
