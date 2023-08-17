@@ -10,29 +10,11 @@ interface Props {
 
 export default function ChatRoom({ socket, roomId, userId }: Props) {
   const [messages, setMessages] = useState<IMessage[]>([]);
-  const [text, setText] = useState<string>("");
   const [optimisticMessages, setOptimisticMessages] = useState<IMessage[]>([]);
-  const updateMessages = () => {
-    socket.emit("get-messages", (msgs: IMessage[]) => {
-      setMessages(msgs);
-    });
-  };
-  useEffect(() => {
-    const handleNewMessage = (message: IMessage) => {
-      setMessages((prev) => [...prev, message]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState<boolean>(true);
+  const [text, setText] = useState<string>("");
 
-      //Removing optimistic message
-      setOptimisticMessages((prev) => {
-        const newMsgs = [...prev];
-        newMsgs.splice(
-          newMsgs.findIndex(
-            (msg) => !(msg.sender == message.sender && msg.text == message.text)
-          ),
-          1
-        );
-        return [...newMsgs];
-      });
-    };
+  useEffect(() => {
     socket.on("new-message", handleNewMessage);
 
     return () => {
@@ -44,6 +26,29 @@ export default function ChatRoom({ socket, roomId, userId }: Props) {
     updateMessages();
   }, [roomId]);
 
+  const handleNewMessage = (message: IMessage) => {
+    setMessages((prev) => [...prev, message]);
+
+    //Removing optimistic message
+    setOptimisticMessages((prev) => {
+      const newMsgs = [...prev];
+      newMsgs.splice(
+        newMsgs.findIndex(
+          (msg) => !(msg.sender == message.sender && msg.text == message.text)
+        ),
+        1
+      );
+      return [...newMsgs];
+    });
+  };
+
+  const updateMessages = () => {
+    setIsLoadingMessages(true);
+    socket.emit("get-messages", (msgs: IMessage[]) => {
+      setMessages(msgs);
+      setIsLoadingMessages(false);
+    });
+  };
   const handleSend = () => {
     setOptimisticMessages((prev) => [...prev, { text, sender: userId }]);
     socket.emit("post-message", text);
@@ -52,19 +57,25 @@ export default function ChatRoom({ socket, roomId, userId }: Props) {
   return (
     <div>
       <h1>{roomId}</h1>
-      <ul style={{ fontSize: 40 }}>
-        {messages.map(({ text, sender }) => (
-          <li>
-            <b>{sender}</b>:{text}
-          </li>
-        ))}
-        {optimisticMessages.map(({ text, sender }) => (
-          <li style={{ color: "gray" }}>
-            <b>{sender}</b>:{text}
-          </li>
-        ))}
-        {messages.length === 0 && "No messages in this room :("}
-      </ul>
+      {isLoadingMessages ? (
+        <div style={{ fontSize: 50 }}>Loading...</div>
+      ) : (
+        <ul style={{ fontSize: 40 }}>
+          {messages.map(({ text, sender }) => (
+            <li>
+              <b>{sender}</b>:{text}
+            </li>
+          ))}
+          {optimisticMessages.map(({ text, sender }) => (
+            <li style={{ color: "gray" }}>
+              <b>{sender}</b>:{text}
+            </li>
+          ))}
+          {messages.length === 0 &&
+            optimisticMessages.length === 0 &&
+            "No messages in this room :("}
+        </ul>
+      )}
       <div>
         <input
           type="text"
