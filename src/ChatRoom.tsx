@@ -18,13 +18,10 @@ export default function ChatRoom({ socket, roomid, userid }: Props) {
     });
   };
   useEffect(() => {
-    const msgUpdate = () => {
-      updateMessages(roomid);
-    };
-    socket.on("update", msgUpdate);
     const handleNewMessage = (message: IMessage) => {
-      console.log(message);
       setMessages((prev) => [...prev, message]);
+
+      //Removing optimistic message
       setOptimisticMessages((prev) => {
         const newMsgs = [...prev];
         newMsgs.splice(
@@ -41,7 +38,6 @@ export default function ChatRoom({ socket, roomid, userid }: Props) {
 
     return () => {
       socket.removeListener("new-message", handleNewMessage);
-      socket.removeListener("update", msgUpdate);
     };
   }, [socket, roomid]);
 
