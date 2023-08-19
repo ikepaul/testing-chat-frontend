@@ -1,63 +1,29 @@
-import { useEffect, useState } from "react";
-import IMessage from "./IMessage";
-import { Socket } from "socket.io-client";
+import { useState } from "react";
+import useChat from "./useChat";
 
 interface Props {
-  socket: Socket;
   roomId: string;
   userId: string;
 }
 
-export default function ChatRoom({ socket, roomId, userId }: Props) {
-  const [messages, setMessages] = useState<IMessage[]>([]);
-  const [optimisticMessages, setOptimisticMessages] = useState<IMessage[]>([]);
-  const [isLoadingMessages, setIsLoadingMessages] = useState<boolean>(true);
+export default function ChatRoom({ roomId, userId }: Props) {
+  const {
+    messages,
+    isLoadingMessages,
+    optimisticMessages,
+    send,
+    isConnecting,
+  } = useChat(roomId, userId);
   const [text, setText] = useState<string>("");
 
-  useEffect(() => {
-    socket.on("new-message", handleNewMessage);
-
-    return () => {
-      socket.removeListener("new-message", handleNewMessage);
-    };
-  }, [socket, roomId]);
-
-  useEffect(() => {
-    updateMessages();
-  }, [roomId]);
-
-  const handleNewMessage = (message: IMessage) => {
-    setMessages((prev) => [...prev, message]);
-
-    //Removing optimistic message
-    setOptimisticMessages((prev) => {
-      const newMsgs = [...prev];
-      newMsgs.splice(
-        newMsgs.findIndex(
-          (msg) => !(msg.sender == message.sender && msg.text == message.text)
-        ),
-        1
-      );
-      return [...newMsgs];
-    });
-  };
-
-  const updateMessages = () => {
-    setIsLoadingMessages(true);
-    socket.emit("get-messages", (msgs: IMessage[]) => {
-      setMessages(msgs);
-      setIsLoadingMessages(false);
-    });
-  };
   const handleSend = () => {
-    setOptimisticMessages((prev) => [...prev, { text, sender: userId }]);
-    socket.emit("post-message", text);
+    send(text);
   };
 
   return (
     <div>
       <h1>{roomId}</h1>
-      {isLoadingMessages ? (
+      {isConnecting || isLoadingMessages ? (
         <div style={{ fontSize: 50 }}>Loading...</div>
       ) : (
         <ul style={{ fontSize: 40 }}>

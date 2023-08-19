@@ -67,11 +67,7 @@ function App() {
   };
 
   const handleRoomClick = (roomId: string) => {
-    socket?.emit("connect-to-room", roomId, (success: boolean) => {
-      if (success) {
-        setRoomId(roomId);
-      }
-    });
+    setRoomId(roomId);
   };
 
   return (
@@ -118,7 +114,7 @@ function App() {
         </div>
       )}
       {userId && socket && connected && roomId && inputUserId ? (
-        <ChatRoom roomId={roomId} userId={userId} socket={socket} />
+        <ChatRoom key={roomId} roomId={roomId} userId={userId} />
       ) : (
         <div>No room selected</div>
       )}
