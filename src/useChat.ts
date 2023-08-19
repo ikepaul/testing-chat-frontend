@@ -7,6 +7,8 @@ export default function useChat(roomId:string,userId:string) {
   const [socket, setSocket] = useState<Socket>();
   const [isLoadingMessages, setIsLoadingMessages] = useState<boolean>(true);
   const [isConnecting, setIsConnecting] = useState<boolean>(true);
+  const [usersTyping, setUsersTyping] = useState<string[]>([]);
+  const [isTyping, setIsTyping] = useState<boolean>(false);
   const [optimisticMessages, setOptimisticMessages] = useState<IMessage[]>([]);
   
   useEffect(() => {
@@ -32,10 +34,18 @@ export default function useChat(roomId:string,userId:string) {
   useEffect(() => {
     socket?.on("new-message", handleNewMessage);
 
+    socket?.on("users-typing", handleUsersTyping);
+
     return () => {
       socket?.removeListener("new-message", handleNewMessage);
+      socket?.removeListener("users-typing", setUsersTyping);
     };
   }, [socket]);
+
+
+  const handleUsersTyping = (ut:string[]) => {
+    setUsersTyping(ut.filter(u => u !== userId))
+  }
 
   const handleNewMessage = (message: IMessage) => {
     setMessages((prev) => [...prev, message]);
@@ -45,12 +55,17 @@ export default function useChat(roomId:string,userId:string) {
       newMsgs.splice(
         newMsgs.findIndex(
           (msg) => !(msg.sender == message.sender && msg.text == message.text)
-        ),
-        1
-      );
-      return [...newMsgs];
-    });
-  };
+          ),
+          1
+          );
+        return [...newMsgs];
+      });
+    };
+    
+  useEffect(() => {
+    socket?.emit("is-typing", isTyping);
+  },[isTyping])
+
 
   useEffect(() => {
     const updateMessages = () => {
@@ -61,8 +76,12 @@ export default function useChat(roomId:string,userId:string) {
         setIsLoadingMessages(false);
       });
     };
+    const getUsersTyping = () => {
+      socket?.emit("get-users-typing", handleUsersTyping)
+    }
     if (!isConnecting) {
       updateMessages();
+      getUsersTyping();
     }
   }, [socket,socket?.id, isConnecting]);
 
@@ -71,5 +90,5 @@ export default function useChat(roomId:string,userId:string) {
     socket?.emit("post-message", text);
   };
 
-  return {messages,isLoadingMessages, optimisticMessages, send, isConnecting};
+  return {messages,isLoadingMessages, optimisticMessages, send, isConnecting, usersTyping, setIsTyping};
 }

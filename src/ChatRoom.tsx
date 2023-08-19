@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useChat from "./useChat";
 
 interface Props {
@@ -13,8 +13,18 @@ export default function ChatRoom({ roomId, userId }: Props) {
     optimisticMessages,
     send,
     isConnecting,
+    usersTyping,
+    setIsTyping,
   } = useChat(roomId, userId);
   const [text, setText] = useState<string>("");
+
+  useEffect(() => {
+    if (text == "") {
+      setIsTyping(false);
+    } else {
+      setIsTyping(true);
+    }
+  }, [text]);
 
   const handleSend = () => {
     send(text);
@@ -41,6 +51,12 @@ export default function ChatRoom({ roomId, userId }: Props) {
             optimisticMessages.length === 0 &&
             "No messages in this room :("}
         </ul>
+      )}
+      {usersTyping.length !== 0 && (
+        <div>
+          {usersTyping.join(",") + (usersTyping.length == 1 ? " is" : " are")}{" "}
+          typing
+        </div>
       )}
       <div>
         <input
