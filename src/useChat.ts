@@ -55,16 +55,6 @@ export default function useChat(roomId:string,userId:string) {
 
   const handleNewMessage = (message: IMessage) => {
     setMessages((prev) => [...prev, message]);
-    
-    setOptimisticMessages((prev) => {
-      const newMsgs = [...prev];
-      newMsgs.splice(
-        newMsgs.findIndex(
-          (msg) => (msg.sender == message.sender && msg.text == message.text)
-        )
-      ,1);
-      return [...newMsgs];
-    });
   };
     
   const handleMessageDeleted = (messageId: string) => {
@@ -100,9 +90,26 @@ export default function useChat(roomId:string,userId:string) {
   }, [socket,socket?.id, isConnecting]);
 
   const sendMessage = (text:string) => {
-    setOptimisticMessages((prev) => [...prev, { text, sender: userId, timestamp:Date.now(), id: v4() }]);
-    socket?.emit("postMessage", text);
+    const tempId = v4();
+    setOptimisticMessages((prev) => [...prev, { text, sender: userId, timestamp:Date.now(), id: tempId }]);
+    socket?.emit("postMessage", text, (maybeMessage: undefined | IMessage) => {
+      removeOptimisticMessage(tempId);
+      if (maybeMessage) {
+        setMessages((prev) => [...prev, maybeMessage]);
+      }
+    });
   };
+
+  const removeOptimisticMessage =(id: string) => {
+    setOptimisticMessages((prev) => {
+      const newMsgs = [...prev];
+      const index = newMsgs.findIndex((msg) => (msg.id == id));
+      if (index === -1) {return prev;}
+      newMsgs.splice(index,1);
+      return [...newMsgs];
+    });
+  }
+
 
   const deleteMessage = (id:string) => {
     socket?.emit("deleteMessage", id);
