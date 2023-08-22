@@ -20,7 +20,7 @@ export default function useChat(roomId:string,userId:string) {
       },
     });
     setIsConnecting(true);
-    s.emit("connect-to-room", roomId, (success: boolean) => {
+    s.emit("connectToRoom", roomId, (success: boolean) => {
       if (success) 
       {
         console.log("success")
@@ -35,16 +35,16 @@ export default function useChat(roomId:string,userId:string) {
 
   //Adding socket-eventlisteners
   useEffect(() => {
-    socket?.on("new-message", handleNewMessage);
+    socket?.on("newMessage", handleNewMessage);
 
-    socket?.on("users-typing", handleUsersTyping);
+    socket?.on("usersTyping", handleUsersTyping);
 
-    socket?.on("message-deleted", handleMessageDeleted);
+    socket?.on("messageDeleted", handleMessageDeleted);
 
     return () => {
-      socket?.removeListener("new-message", handleNewMessage);
-      socket?.removeListener("users-typing", setUsersTyping);
-      socket?.removeListener("message-deleted", handleMessageDeleted);
+      socket?.removeListener("newMessage", handleNewMessage);
+      socket?.removeListener("usersTyping", setUsersTyping);
+      socket?.removeListener("messageDeleted", handleMessageDeleted);
     };
   }, [socket]);
 
@@ -78,20 +78,20 @@ export default function useChat(roomId:string,userId:string) {
   }
 
   useEffect(() => {
-    socket?.emit("is-typing", isTyping);
+    socket?.emit("isTyping", isTyping);
   },[isTyping])
 
 
   useEffect(() => {
     const updateMessages = () => {
       setIsLoadingMessages(true);
-      socket?.emit("get-messages", (msgs: IMessage[]) => {
+      socket?.emit("getMessages", (msgs: IMessage[]) => {
         setMessages(msgs);
         setIsLoadingMessages(false);
       });
     };
     const getUsersTyping = () => {
-      socket?.emit("get-users-typing", handleUsersTyping)
+      socket?.emit("getUsersTyping", handleUsersTyping)
     }
     if (!isConnecting) {
       updateMessages();
@@ -101,11 +101,11 @@ export default function useChat(roomId:string,userId:string) {
 
   const sendMessage = (text:string) => {
     setOptimisticMessages((prev) => [...prev, { text, sender: userId, timestamp:Date.now(), id: v4() }]);
-    socket?.emit("post-message", text);
+    socket?.emit("postMessage", text);
   };
 
   const deleteMessage = (id:string) => {
-    socket?.emit("delete-message", id);
+    socket?.emit("deleteMessage", id);
   }
 
   return {deleteMessage, messages,isLoadingMessages, optimisticMessages, sendMessage, isConnecting, usersTyping, setIsTyping};

@@ -21,7 +21,7 @@ function App() {
   }, [userId]);
 
   useEffect(() => {
-    socket?.emit("get-rooms", (rms: string[]) => {
+    socket?.emit("getRooms", (rms: string[]) => {
       setRooms(rms);
     });
   }, [socket, userId]);
@@ -46,7 +46,7 @@ function App() {
   }, [socket]);
 
   const handleJoin = () => {
-    socket?.emit("join-room", inputRoomId);
+    socket?.emit("joinRoom", inputRoomId);
     getRooms();
   };
 
@@ -59,7 +59,7 @@ function App() {
   };
 
   const getRooms = () => {
-    socket?.emit("get-rooms", (rms: string[]) => {
+    socket?.emit("getRooms", (rms: string[]) => {
       setRooms(rms);
     });
   };
