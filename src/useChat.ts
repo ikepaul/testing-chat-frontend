@@ -60,7 +60,7 @@ export default function useChat(roomId:string,userId:string) {
       const newMsgs = [...prev];
       newMsgs.splice(
         newMsgs.findIndex(
-          (msg) => !(msg.sender == message.sender && msg.text == message.text)
+          (msg) => (msg.sender == message.sender && msg.text == message.text)
         )
       ,1);
       return [...newMsgs];

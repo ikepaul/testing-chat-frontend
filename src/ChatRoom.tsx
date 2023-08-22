@@ -61,7 +61,9 @@ export default function ChatRoom({ roomId, userId }: Props) {
         <div>
           <ul style={{ listStyle: "none" }}>
             {messages.map(displayMessage)}
-            {optimisticMessages.map(displayMessage)}
+            <span style={{ color: "gray" }}>
+              {optimisticMessages.map(displayMessage)}
+            </span>
             {messages.length === 0 &&
               optimisticMessages.length === 0 &&
               "No messages in this room :("}
