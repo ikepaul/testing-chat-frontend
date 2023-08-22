@@ -23,7 +23,6 @@ function App() {
   useEffect(() => {
     socket?.emit("get-rooms", (rms: string[]) => {
       setRooms(rms);
-      console.log(rms);
     });
   }, [socket, userId]);
   useEffect(() => {
@@ -62,7 +61,6 @@ function App() {
   const getRooms = () => {
     socket?.emit("get-rooms", (rms: string[]) => {
       setRooms(rms);
-      console.log(rms);
     });
   };
 
@@ -75,7 +73,7 @@ function App() {
       <div style={{ position: "absolute", top: "20px", right: "20px" }}>
         <span style={{ fontSize: "20px" }}>{userId}</span>
         &nbsp;
-        <button onClick={handleSignOut}>Sign out</button>
+        {userId && <button onClick={handleSignOut}>Sign out</button>}
       </div>
       {userId === "" && (
         <Fragment>
@@ -108,7 +106,9 @@ function App() {
       {userId && (
         <div>
           {rooms.map((room) => (
-            <button onClick={() => handleRoomClick(room)}>{room}</button>
+            <button key={room} onClick={() => handleRoomClick(room)}>
+              {room}
+            </button>
           ))}
         </div>
       )}

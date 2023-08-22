@@ -12,10 +12,11 @@ export default function ChatRoom({ roomId, userId }: Props) {
     messages,
     isLoadingMessages,
     optimisticMessages,
-    send,
+    sendMessage,
     isConnecting,
     usersTyping,
     setIsTyping,
+    deleteMessage,
   } = useChat(roomId, userId);
   const [text, setText] = useState<string>("");
 
@@ -28,16 +29,16 @@ export default function ChatRoom({ roomId, userId }: Props) {
   }, [text]);
 
   const handleSend = () => {
-    send(text);
+    sendMessage(text);
     setText("");
   };
 
-  const displayMessage = ({ text, sender, timestamp }: IMessage) => {
+  const displayMessage = ({ text, sender, timestamp, id }: IMessage) => {
     const date = new Date(timestamp);
     const h = date.getHours();
     const m = date.getMinutes();
     return (
-      <li style={sender == userId ? { textAlign: "right" } : {}}>
+      <li key={id} style={sender == userId ? { textAlign: "right" } : {}}>
         <div style={{ textAlign: "left", display: "inline-block" }}>
           <div>
             <b style={{ fontSize: 20 }}>{sender}</b>
@@ -45,6 +46,7 @@ export default function ChatRoom({ roomId, userId }: Props) {
             <span style={{ color: "gray", fontSize: 15 }}>{h + ":" + m}</span>
           </div>
           <div style={{ fontSize: 40 }}>{text}</div>
+          <button onClick={() => deleteMessage(id)}>X</button>
         </div>
       </li>
     );

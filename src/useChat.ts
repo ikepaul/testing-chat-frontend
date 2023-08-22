@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import IMessage from "./IMessage";
 import { Socket, io} from "socket.io-client";
+import { v4 } from "uuid";
 
 export default function useChat(roomId:string,userId:string) {
   const [messages, setMessages] = useState<IMessage[]>([]);
@@ -38,9 +39,12 @@ export default function useChat(roomId:string,userId:string) {
 
     socket?.on("users-typing", handleUsersTyping);
 
+    socket?.on("message-deleted", handleMessageDeleted);
+
     return () => {
       socket?.removeListener("new-message", handleNewMessage);
       socket?.removeListener("users-typing", setUsersTyping);
+      socket?.removeListener("message-deleted", handleMessageDeleted);
     };
   }, [socket]);
 
@@ -57,13 +61,22 @@ export default function useChat(roomId:string,userId:string) {
       newMsgs.splice(
         newMsgs.findIndex(
           (msg) => !(msg.sender == message.sender && msg.text == message.text)
-          ),
-          1
-          );
-        return [...newMsgs];
-      });
-    };
+        )
+      ,1);
+      return [...newMsgs];
+    });
+  };
     
+  const handleMessageDeleted = (messageId: string) => {
+    setMessages(prev => {
+      const newMessages = prev.map(m => ({...m}));
+      const index = newMessages.findIndex(m => m.id === messageId);
+      if (index === -1 ){return prev;}
+      newMessages.splice(index,1);
+      return [...newMessages];
+    })
+  }
+
   useEffect(() => {
     socket?.emit("is-typing", isTyping);
   },[isTyping])
@@ -74,7 +87,6 @@ export default function useChat(roomId:string,userId:string) {
       setIsLoadingMessages(true);
       socket?.emit("get-messages", (msgs: IMessage[]) => {
         setMessages(msgs);
-        console.log(msgs)
         setIsLoadingMessages(false);
       });
     };
@@ -87,10 +99,14 @@ export default function useChat(roomId:string,userId:string) {
     }
   }, [socket,socket?.id, isConnecting]);
 
-  const send = (text:string) => {
-    setOptimisticMessages((prev) => [...prev, { text, sender: userId, timestamp:Date.now() }]);
+  const sendMessage = (text:string) => {
+    setOptimisticMessages((prev) => [...prev, { text, sender: userId, timestamp:Date.now(), id: v4() }]);
     socket?.emit("post-message", text);
   };
 
-  return {messages,isLoadingMessages, optimisticMessages, send, isConnecting, usersTyping, setIsTyping};
+  const deleteMessage = (id:string) => {
+    socket?.emit("delete-message", id);
+  }
+
+  return {deleteMessage, messages,isLoadingMessages, optimisticMessages, sendMessage, isConnecting, usersTyping, setIsTyping};
 }
