@@ -71,13 +71,12 @@ function App() {
   };
 
   return (
-    <div>
-      <button
-        onClick={handleSignOut}
-        style={{ position: "absolute", top: "20px", right: "20px" }}
-      >
-        Sign out
-      </button>
+    <div style={{ fontFamily: "sans-serif" }}>
+      <div style={{ position: "absolute", top: "20px", right: "20px" }}>
+        <span style={{ fontSize: "20px" }}>{userId}</span>
+        &nbsp;
+        <button onClick={handleSignOut}>Sign out</button>
+      </div>
       {userId === "" && (
         <Fragment>
           <input

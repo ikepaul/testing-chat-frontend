@@ -11,6 +11,7 @@ export default function useChat(roomId:string,userId:string) {
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [optimisticMessages, setOptimisticMessages] = useState<IMessage[]>([]);
   
+  //Fires once on when useChat is called
   useEffect(() => {
     const s = io("http://localhost:3000", {
       auth: {
@@ -31,6 +32,7 @@ export default function useChat(roomId:string,userId:string) {
     setSocket(s);
   }, [])
 
+  //Adding socket-eventlisteners
   useEffect(() => {
     socket?.on("new-message", handleNewMessage);
 
@@ -86,7 +88,7 @@ export default function useChat(roomId:string,userId:string) {
   }, [socket,socket?.id, isConnecting]);
 
   const send = (text:string) => {
-    setOptimisticMessages((prev) => [...prev, { text, sender: userId }]);
+    setOptimisticMessages((prev) => [...prev, { text, sender: userId, timestamp:Date.now() }]);
     socket?.emit("post-message", text);
   };
 

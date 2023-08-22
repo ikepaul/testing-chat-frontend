@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import useChat from "./useChat";
+import IMessage from "./IMessage";
 
 interface Props {
   roomId: string;
@@ -28,6 +29,25 @@ export default function ChatRoom({ roomId, userId }: Props) {
 
   const handleSend = () => {
     send(text);
+    setText("");
+  };
+
+  const displayMessage = ({ text, sender, timestamp }: IMessage) => {
+    const date = new Date(timestamp);
+    const h = date.getHours();
+    const m = date.getMinutes();
+    return (
+      <li style={sender == userId ? { textAlign: "right" } : {}}>
+        <div style={{ textAlign: "left", display: "inline-block" }}>
+          <div>
+            <b style={{ fontSize: 20 }}>{sender}</b>
+            &nbsp;
+            <span style={{ color: "gray", fontSize: 15 }}>{h + ":" + m}</span>
+          </div>
+          <div style={{ fontSize: 40 }}>{text}</div>
+        </div>
+      </li>
+    );
   };
 
   return (
@@ -36,28 +56,24 @@ export default function ChatRoom({ roomId, userId }: Props) {
       {isConnecting || isLoadingMessages ? (
         <div style={{ fontSize: 50 }}>Loading...</div>
       ) : (
-        <ul style={{ fontSize: 40 }}>
-          {messages.map(({ text, sender }) => (
-            <li>
-              <b>{sender}</b>:{text}
-            </li>
-          ))}
-          {optimisticMessages.map(({ text, sender }) => (
-            <li style={{ color: "gray" }}>
-              <b>{sender}</b>:{text}
-            </li>
-          ))}
-          {messages.length === 0 &&
-            optimisticMessages.length === 0 &&
-            "No messages in this room :("}
-        </ul>
-      )}
-      {usersTyping.length !== 0 && (
         <div>
-          {usersTyping.join(",") + (usersTyping.length == 1 ? " is" : " are")}{" "}
-          typing
+          <ul style={{ listStyle: "none" }}>
+            {messages.map(displayMessage)}
+            {optimisticMessages.map(displayMessage)}
+            {messages.length === 0 &&
+              optimisticMessages.length === 0 &&
+              "No messages in this room :("}
+          </ul>
+          {usersTyping.length !== 0 && (
+            <div>
+              {usersTyping.join(" and ") +
+                (usersTyping.length == 1 ? " is" : " are")}{" "}
+              typing
+            </div>
+          )}
         </div>
       )}
+
       <div>
         <input
           type="text"
@@ -66,11 +82,12 @@ export default function ChatRoom({ roomId, userId }: Props) {
           name=""
           style={{
             width: "70%",
+            boxSizing: "border-box",
           }}
           id=""
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
-        <button style={{ width: "25%" }} onClick={handleSend}>
+        <button style={{ width: "30%" }} onClick={handleSend}>
           send
         </button>
       </div>
