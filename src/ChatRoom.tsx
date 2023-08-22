@@ -46,7 +46,9 @@ export default function ChatRoom({ roomId, userId }: Props) {
             <span style={{ color: "gray", fontSize: 15 }}>{h + ":" + m}</span>
           </div>
           <div style={{ fontSize: 40 }}>{text}</div>
-          <button onClick={() => deleteMessage(id)}>X</button>
+          {sender === userId && (
+            <button onClick={() => deleteMessage(id)}>X</button>
+          )}
         </div>
       </li>
     );
